@@ -55,10 +55,12 @@ export interface RawServerEntry {
   url?: string;
 }
 
+export type OutputFormat = "text" | "json" | "markdown" | "sarif";
+
 export interface CliOptions {
-  json: boolean;
+  format: OutputFormat;
+  output: string | null;
   help: boolean;
   verbose: boolean;
-  markdown: boolean;
   severity: Severity;
 }

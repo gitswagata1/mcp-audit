@@ -1,4 +1,5 @@
 import type { AuditResult, Finding, McpServer, Severity, Category, Grade, ServerScore } from "./types.js";
+import { formatFix } from "./fixes.js";
 
 const SEVERITY_CONFIG: Record<Severity, { icon: string; color: string; label: string }> = {
   critical: { icon: "\u{1F6D1}", color: "\x1b[91m", label: "CRITICAL" },
@@ -116,6 +117,11 @@ function printFindings(findings: Finding[], verbose: boolean): void {
 
     if (verbose || f.severity === "critical" || f.severity === "high") {
       console.log(`  ${GREEN}  → ${f.recommendation}${RESET}`);
+    }
+
+    if (f.fix) {
+      console.log(`  ${GREEN}  ✎ fix: ${formatFix(f.fix)}${RESET}`);
+      if (verbose) console.log(`  ${DIM}    in: ${f.fix.file}${RESET}`);
     }
 
     console.log(`  ${DIM}  server: ${f.server} · source: ${f.source}${RESET}`);

@@ -1,4 +1,5 @@
 import type { McpServer, Finding } from "../types.js";
+import { argsFix } from "../fixes.js";
 
 const SHELL_COMMANDS = new Set([
   "bash", "sh", "zsh", "fish", "csh", "tcsh", "ksh", "dash",
@@ -84,6 +85,7 @@ export function checkPermissions(server: McpServer): Finding[] {
             title: "Overly broad filesystem scope",
             detail: `Server "${server.name}" has access to ${label}. This exposes sensitive system files and user data.`,
             recommendation: `Restrict to the minimum directory needed, e.g., a single project folder instead of "${pathArg}".`,
+            fix: argsFix(server, (args) => args.map((a) => (a === pathArg ? "<project-dir>" : a))),
             server: server.name,
             source: server.source,
           });
@@ -124,6 +126,7 @@ export function checkPermissions(server: McpServer): Finding[] {
         title: `Dangerous flag: ${label}`,
         detail: `Server "${server.name}" uses a flag granting ${label}.`,
         recommendation: `Remove the flag or replace with a more restrictive alternative.`,
+        fix: argsFix(server, (args) => args.filter((a) => !pattern.test(a))),
         server: server.name,
         source: server.source,
       });

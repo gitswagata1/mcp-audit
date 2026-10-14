@@ -1,4 +1,13 @@
 import type { AuditResult, Finding, Severity, Category } from "./types.js";
+import { formatFix } from "./fixes.js";
+
+/** Wrap text in an inline code span that survives backticks inside it. */
+function inlineCode(text: string): string {
+  const longestRun = Math.max(0, ...(text.match(/`+/g) ?? []).map((r) => r.length));
+  const fence = "`".repeat(longestRun + 1);
+  const pad = longestRun > 0 ? " " : "";
+  return `${fence}${pad}${text}${pad}${fence}`;
+}
 
 const SEVERITY_EMOJI: Record<Severity, string> = {
   critical: "\u{1F6D1}",
@@ -73,6 +82,9 @@ export function printMarkdown(result: AuditResult): void {
         lines.push(`  ${f.detail}`);
         if (sev === "critical" || sev === "high") {
           lines.push(`  > **Fix:** ${f.recommendation}`);
+        }
+        if (f.fix) {
+          lines.push(`  > **Auto-fix:** ${inlineCode(formatFix(f.fix))}`);
         }
       }
       lines.push("");

@@ -22,6 +22,7 @@ export function checkFilePermissions(scannedPaths: string[]): Finding[] {
           title: "Config file is world-writable",
           detail: `Config "${filePath}" is writable by any user on this system. An attacker could inject malicious MCP servers.`,
           recommendation: `Fix with: chmod 600 "${filePath}"`,
+          fix: { file: filePath, command: `chmod 600 "${filePath}"` },
           server: "(config file)",
           source: filePath,
         });
@@ -32,6 +33,7 @@ export function checkFilePermissions(scannedPaths: string[]): Finding[] {
           title: "Config file is world-readable",
           detail: `Config "${filePath}" is readable by any user. If it contains secrets, they are exposed.`,
           recommendation: `Fix with: chmod 600 "${filePath}"`,
+          fix: { file: filePath, command: `chmod 600 "${filePath}"` },
           server: "(config file)",
           source: filePath,
         });
@@ -42,6 +44,7 @@ export function checkFilePermissions(scannedPaths: string[]): Finding[] {
           title: "Config file is group-writable",
           detail: `Config "${filePath}" is writable by the file's group. Group members could inject malicious MCP servers.`,
           recommendation: `Fix with: chmod 600 "${filePath}"`,
+          fix: { file: filePath, command: `chmod 600 "${filePath}"` },
           server: "(config file)",
           source: filePath,
         });

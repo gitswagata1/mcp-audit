@@ -20,8 +20,29 @@ export interface Finding {
   title: string;
   detail: string;
   recommendation: string;
+  /** Concrete, machine-applicable fix for `recommendation`, when one can be derived from the config. */
+  fix?: Fix;
   server: string;
   source: string;
+}
+
+/**
+ * RFC 7396 JSON Merge Patch for a single server entry (e.g. `mcpServers.<name>`).
+ * `args` replaces the whole array; an env value of `null` removes that variable.
+ */
+export interface ServerPatch {
+  args?: string[];
+  env?: Record<string, string | null>;
+  url?: string;
+}
+
+export interface Fix {
+  /** Config file the fix applies to. */
+  file: string;
+  /** Corrected fields to merge into the server's config entry. */
+  patch?: ServerPatch;
+  /** Shell command that applies the fix (e.g. chmod). */
+  command?: string;
 }
 
 export interface ServerScore {

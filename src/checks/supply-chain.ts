@@ -1,4 +1,5 @@
 import type { McpServer, Finding } from "../types.js";
+import { argsFix } from "../fixes.js";
 
 const KNOWN_PUBLISHERS: Record<string, string> = {
   "@modelcontextprotocol/": "Anthropic (official MCP)",
@@ -75,6 +76,7 @@ export function checkSupplyChain(server: McpServer): Finding[] {
         title: "Unpinned package version",
         detail: `Server "${server.name}" runs "${pkg}" without a pinned version. A compromised future release could execute malicious code.`,
         recommendation: `Pin to a specific version, e.g., "${pkg.replace(/@latest$/, "")}@1.2.3".`,
+        fix: argsFix(server, (args) => args.map((a) => (a === pkg ? `${pkg.replace(/@latest$/, "")}@<version>` : a))),
         server: server.name,
         source: server.source,
       });
@@ -99,6 +101,7 @@ export function checkSupplyChain(server: McpServer): Finding[] {
         title: "Auto-confirm flag on package runner",
         detail: `Server "${server.name}" uses --yes/-y with ${server.command}, which auto-confirms package installation without prompting.`,
         recommendation: "Remove the --yes flag so the user is prompted before installing new packages.",
+        fix: argsFix(server, (args) => args.filter((a) => a !== "--yes" && a !== "-y")),
         server: server.name,
         source: server.source,
       });
@@ -115,6 +118,7 @@ export function checkSupplyChain(server: McpServer): Finding[] {
         title: "Privileged container",
         detail: `Server "${server.name}" runs a container in privileged mode. This grants near-host-level access.`,
         recommendation: "Remove --privileged. Use specific --cap-add flags for only the capabilities needed.",
+        fix: argsFix(server, (args) => args.filter((a) => a !== "--privileged")),
         server: server.name,
         source: server.source,
       });
@@ -127,6 +131,7 @@ export function checkSupplyChain(server: McpServer): Finding[] {
         title: "Host network mode",
         detail: `Server "${server.name}" runs a container with host networking. The container shares the host's network stack.`,
         recommendation: "Use bridge networking (default) and expose only needed ports with -p.",
+        fix: argsFix(server, (args) => args.filter((a) => a !== "--network=host" && a !== "--net=host")),
         server: server.name,
         source: server.source,
       });
@@ -155,6 +160,7 @@ export function checkSupplyChain(server: McpServer): Finding[] {
         title: "Host PID namespace",
         detail: `Server "${server.name}" shares the host PID namespace. It can see and signal all host processes.`,
         recommendation: "Remove --pid=host unless absolutely required.",
+        fix: argsFix(server, (args) => args.filter((a) => a !== "--pid=host")),
         server: server.name,
         source: server.source,
       });

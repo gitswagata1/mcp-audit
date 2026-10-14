@@ -1,4 +1,5 @@
 import type { McpServer, Finding } from "../types.js";
+import { envFix } from "../fixes.js";
 
 const INJECTION_ENV_VARS: Record<string, { severity: "critical" | "high"; risk: string }> = {
   "LD_PRELOAD":      { severity: "critical", risk: "library injection — arbitrary code runs before main process" },
@@ -24,6 +25,12 @@ const INJECTION_ENV_VARS: Record<string, { severity: "critical" | "high"; risk: 
 
 const PATH_VARS = new Set(["PATH", "Path"]);
 
+/** Drop "." and empty entries from a PATH value, keeping its separator. */
+function cleanPath(value: string): string {
+  const sep = value.includes(";") ? ";" : ":";
+  return value.split(sep).filter((p) => p !== "." && p !== "").join(sep);
+}
+
 export function checkEnvironment(server: McpServer): Finding[] {
   const findings: Finding[] = [];
 
@@ -38,6 +45,7 @@ export function checkEnvironment(server: McpServer): Finding[] {
         title: `Dangerous env var: ${key}`,
         detail: `Server "${server.name}" sets ${key}. Risk: ${injectionRisk.risk}.`,
         recommendation: `Remove ${key} from the server's env unless absolutely required. This variable can be used for privilege escalation.`,
+        fix: envFix(server, { [key]: null }),
         server: server.name,
         source: server.source,
       });
@@ -50,6 +58,7 @@ export function checkEnvironment(server: McpServer): Finding[] {
         title: "PATH override",
         detail: `Server "${server.name}" overrides the PATH variable. This controls which executables are found and run by the server.`,
         recommendation: "Avoid overriding PATH. If needed, append to it rather than replacing it entirely.",
+        fix: envFix(server, { [key]: null }),
         server: server.name,
         source: server.source,
       });
@@ -63,6 +72,7 @@ export function checkEnvironment(server: McpServer): Finding[] {
             title: "Current directory in PATH",
             detail: `Server "${server.name}" has "." or empty entry in PATH. This allows executing arbitrary binaries from the current working directory.`,
             recommendation: "Remove '.' and empty entries from PATH. Use absolute paths.",
+            fix: envFix(server, { [key]: cleanPath(value) }),
             server: server.name,
             source: server.source,
           });
@@ -82,6 +92,7 @@ export function checkEnvironment(server: McpServer): Finding[] {
       title: "Proxy + credentials combination",
       detail: `Server "${server.name}" has both proxy settings and credentials in its env. A malicious proxy could intercept the credentials in transit.`,
       recommendation: "Remove proxy env vars, or ensure they point to a trusted endpoint. Use HTTPS endpoints for the proxy itself.",
+      fix: envFix(server, Object.fromEntries(Object.keys(server.env).filter(k => k.toUpperCase().includes("PROXY")).map(k => [k, null]))),
       server: server.name,
       source: server.source,
     });

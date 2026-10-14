@@ -1,4 +1,4 @@
-import type { McpServer, Finding } from "../types.js";
+import type { McpServer, Finding, Fix } from "../types.js";
 
 const SECRET_KEY_PATTERNS = [
   /api[_-]?key/i,
@@ -49,8 +49,27 @@ const HARDCODED_VALUE_PATTERNS = [
   { pattern: /^AgAAAA[a-zA-Z0-9_-]{30,}$/,        name: "Databricks" },
 ];
 
+/** Env reference (e.g. ${GITHUB_TOKEN}) that keeps a value out of the config file. */
+export function envRef(key: string): string {
+  return `\${${key}}`;
+}
+
+/**
+ * Replace hardcoded secrets in args with env references (${API_KEY}, ${API_KEY_2}, ...)
+ * so that fix patches never echo a secret back into reports or JSON output.
+ */
+export function redactArgs(args: string[]): string[] {
+  let n = 0;
+  return args.map((a) => {
+    if (!HARDCODED_VALUE_PATTERNS.some((p) => p.pattern.test(a))) return a;
+    n++;
+    return envRef(n === 1 ? "API_KEY" : `API_KEY_${n}`);
+  });
+}
+
 export function checkSecrets(server: McpServer): Finding[] {
   const findings: Finding[] = [];
+  const envRefFix = (key: string): Fix => ({ file: server.sourcePath, patch: { env: { [key]: envRef(key) } } });
 
   for (const [key, value] of Object.entries(server.env)) {
     if (SECRET_KEY_PATTERNS.some((p) => p.test(key))) {
@@ -64,6 +83,7 @@ export function checkSecrets(server: McpServer): Finding[] {
           title: `Hardcoded ${matched.name} secret`,
           detail: `Server "${server.name}" has a hardcoded ${matched.name} key in env var "${key}". This is stored in plaintext on disk.`,
           recommendation: `Move the value to an environment variable or secrets manager. Reference it as \${${key}} instead.`,
+          fix: envRefFix(key),
           server: server.name,
           source: server.source,
         });
@@ -74,6 +94,7 @@ export function checkSecrets(server: McpServer): Finding[] {
           title: "Possible hardcoded credential",
           detail: `Server "${server.name}" has env var "${key}" with a suspicious inline value (${value.length} chars). Consider using an environment variable reference.`,
           recommendation: `Replace the inline value with an env reference like \${${key}}.`,
+          fix: envRefFix(key),
           server: server.name,
           source: server.source,
         });
@@ -84,6 +105,7 @@ export function checkSecrets(server: McpServer): Finding[] {
           title: "Short secret value",
           detail: `Server "${server.name}" has env var "${key}" with a short inline value. Verify it's not a truncated credential.`,
           recommendation: "Use environment variable references for all secrets, regardless of length.",
+          fix: envRefFix(key),
           server: server.name,
           source: server.source,
         });
@@ -98,6 +120,7 @@ export function checkSecrets(server: McpServer): Finding[] {
         title: `${matched.name} key in non-standard env var`,
         detail: `Server "${server.name}" has a ${matched.name} key pattern in env var "${key}" (unusual name hides the secret from simple scans).`,
         recommendation: `Rename to a standard key name and move the value to a secrets manager.`,
+        fix: envRefFix(key),
         server: server.name,
         source: server.source,
       });
@@ -113,6 +136,7 @@ export function checkSecrets(server: McpServer): Finding[] {
         title: `${matched.name} secret in command args`,
         detail: `Server "${server.name}" has a ${matched.name} key passed as a command argument. This is visible in process listings and shell history.`,
         recommendation: "Pass secrets via environment variables, never as CLI arguments.",
+        fix: { file: server.sourcePath, patch: { args: redactArgs(server.args) } },
         server: server.name,
         source: server.source,
       });

@@ -1,4 +1,5 @@
 import type { McpServer, Finding } from "../types.js";
+import { urlFix } from "../fixes.js";
 
 export function checkTransport(server: McpServer): Finding[] {
   const findings: Finding[] = [];
@@ -11,6 +12,7 @@ export function checkTransport(server: McpServer): Finding[] {
         title: "Unencrypted HTTP transport",
         detail: `Server "${server.name}" connects over plain HTTP (${server.url.substring(0, 80)}). Traffic including credentials and tool responses is unencrypted.`,
         recommendation: "Use HTTPS (TLS) for all remote MCP server connections.",
+        fix: urlFix(server, { https: true }),
         server: server.name,
         source: server.source,
       });
@@ -43,6 +45,7 @@ export function checkTransport(server: McpServer): Finding[] {
           title: "Credentials embedded in URL",
           detail: `Server "${server.name}" has credentials embedded in its URL. These are visible in logs, process listings, and config files.`,
           recommendation: "Pass credentials via environment variables or auth headers, not in the URL.",
+          fix: urlFix(server),
           server: server.name,
           source: server.source,
         });

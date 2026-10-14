@@ -1,0 +1,34 @@
+# Example .mcp-audit.yml policy file.
+# mcp-audit loads ~/.config/mcp-audit/.mcp-audit.yml (or ~/.mcp-audit.yml)
+# first, then <project root>/.mcp-audit.yml; the project file wins on
+# conflicting severity keys and all rules are merged.
+
+# Findings matched by an allow rule are reported as suppressed instead of
+# counted, so they no longer lower the grade or change the exit code.
+allow:
+  # The filesystem server is trusted as long as every path it serves lives
+  # under one of these directories.
+  - server: "filesystem"
+    paths:
+      - /home/user/projects
+  # Anything named "trusted-internal-server" is skipped entirely.
+  - server: "trusted-internal-server"
+  # Skip a single check for one server: `check` is a category
+  # (permissions, secrets, supply-chain, transport, environment,
+  # config-hygiene) or part of a finding title, e.g. "unpinned package".
+  - server: "context7"
+    check: "unpinned package"
+
+# Deny rules always add a critical finding and cannot be allowlisted away.
+# The *_pattern values are plain substrings; `server` supports * wildcards.
+deny:
+  - server: "*"
+    args_pattern: "--no-sandbox"
+  - server: "*"
+    url_pattern: "http://"
+
+# Override the default severity of a category or of specific checks.
+# Wildcards are supported: "hardcoded-*-secret" matches "Hardcoded GitHub secret".
+severity:
+  secrets: high
+  unpinned package version: medium

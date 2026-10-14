@@ -1,4 +1,4 @@
-import type { AuditResult, Finding, McpServer, Severity, Category, Grade, ServerScore } from "./types.js";
+import type { AuditResult, Finding, McpServer, Severity, Category, Grade, ServerScore, PolicyReport } from "./types.js";
 
 const SEVERITY_CONFIG: Record<Severity, { icon: string; color: string; label: string }> = {
   critical: { icon: "\u{1F6D1}", color: "\x1b[91m", label: "CRITICAL" },
@@ -50,7 +50,21 @@ export function printReport(result: AuditResult, verbose: boolean = false): void
 
   printServers(result.servers, result.serverScores, verbose);
   printFindings(result.findings, verbose);
+  if (result.policy) printSuppressions(result.policy);
   printSummary(result);
+}
+
+function printSuppressions(policy: PolicyReport): void {
+  if (policy.suppressed.length === 0) return;
+
+  console.log(`  ${DIM}${BOLD}Suppressed by policy: ${policy.suppressed.length}${RESET}`);
+  console.log();
+  for (const f of policy.suppressed) {
+    const cat = CATEGORY_LABELS[f.category] ?? f.category;
+    console.log(`  ${DIM}  ◦ [${cat}] ${f.title} — ${f.server}${RESET}`);
+    console.log(`  ${DIM}    ${f.reason}${RESET}`);
+  }
+  console.log();
 }
 
 function printServers(servers: McpServer[], scores: ServerScore[], verbose: boolean): void {

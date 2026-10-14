@@ -42,6 +42,44 @@ export interface AuditResult {
   grade: Grade;
   score: number;
   serverScores: ServerScore[];
+  /** Present only when a policy file was loaded. */
+  policy?: PolicyReport;
+}
+
+export interface PolicyAllowRule {
+  /** Server name; supports `*` wildcards. Omitted = any server. */
+  server?: string;
+  /** Only allow when every path argument of the server is inside one of these paths. */
+  paths?: string[];
+  /** Category (e.g. `supply-chain`) or finding id/title (e.g. `unpinned-package-version`). */
+  check?: string;
+}
+
+export interface PolicyDenyRule {
+  /** Server name; supports `*` wildcards. Omitted = any server. */
+  server?: string;
+  args_pattern?: string;
+  command_pattern?: string;
+  url_pattern?: string;
+}
+
+export interface PolicyConfig {
+  allow: PolicyAllowRule[];
+  deny: PolicyDenyRule[];
+  /** Severity overrides keyed by category or finding id/title. */
+  severity: Record<string, Severity>;
+  /** Policy files that were loaded, in merge order (global first, project last). */
+  files: string[];
+}
+
+export interface SuppressedFinding extends Finding {
+  /** Why the finding was suppressed (which allow rule matched). */
+  reason: string;
+}
+
+export interface PolicyReport {
+  files: string[];
+  suppressed: SuppressedFinding[];
 }
 
 export interface McpConfig {
@@ -61,4 +99,8 @@ export interface CliOptions {
   verbose: boolean;
   markdown: boolean;
   severity: Severity;
+  /** File given by --policy; null when no explicit policy file was requested. */
+  policy: string | null;
+  /** --no-policy: ignore global and project policy files. */
+  noPolicy: boolean;
 }

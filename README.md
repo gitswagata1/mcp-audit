@@ -150,6 +150,8 @@ npx mcp-audit --verbose          Show paths, recommendations, file locations
 npx mcp-audit --json             Machine-readable JSON (with scores and metadata)
 npx mcp-audit --markdown         Output as Markdown (for PRs, CI comments)
 npx mcp-audit --severity high    Only show high+ findings
+npx mcp-audit --policy <path>    Use one specific .mcp-audit.yml policy file
+npx mcp-audit --no-policy        Ignore global and project policy files
 npx mcp-audit --help             Full help
 ```
 
@@ -241,6 +243,36 @@ GitHub Actions:
   if: always()
 ```
 
+## Policy Files
+
+A `.mcp-audit.yml` file codifies what your team considers acceptable, so known-good
+setups stop lowering the grade. mcp-audit loads `~/.config/mcp-audit/.mcp-audit.yml`
+(or `~/.mcp-audit.yml`) first and then `<project root>/.mcp-audit.yml`; rules from both
+apply and the project file wins on conflicting severity keys. Use `--policy <path>` for a
+single file or `--no-policy` to ignore them. See [`.mcp-audit.example.yml`](.mcp-audit.example.yml).
+
+```yaml
+allow:                       # findings that match are reported as suppressed
+  - server: "filesystem"     # server names accept * wildcards
+    paths: ["/home/user/projects"]   # every served path must be inside
+  - server: "context7"
+    check: "unpinned package"        # a category or part of a finding title
+deny:                        # always a critical finding, cannot be allowlisted
+  - server: "*"
+    args_pattern: "--no-sandbox"     # plain substring in args / command / url
+severity:                    # override defaults by category or check
+  secrets: high
+  unpinned package version: medium
+```
+
+```bash
+npx mcp-audit --policy .mcp-audit.yml --json   # includes policy.files + policy.suppressed
+```
+
+Suppressions and overrides are applied *before* grading, so they change the score,
+the per-server grades and the exit codes, not just the display. Invalid policy files
+fail with a section, key and line number instead of being silently ignored.
+
 ## Exit Codes
 
 | Code | Meaning |
@@ -256,7 +288,7 @@ GitHub Actions:
 - [ ] SARIF output for GitHub Security tab integration
 - [ ] Auto-fix suggestions (pin versions, move secrets to env)
 - [ ] Community-maintained vulnerability database for MCP packages
-- [ ] Policy file (`.mcp-audit.yml`) for custom rules and allowlists
+- [x] Policy file (`.mcp-audit.yml`) for custom rules and allowlists
 - [ ] VS Code / Cursor extension
 - [ ] Watch mode — re-scan on config changes
 - [ ] Scoring system — overall security grade (A–F)

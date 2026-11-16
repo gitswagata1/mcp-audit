@@ -42,7 +42,7 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   }

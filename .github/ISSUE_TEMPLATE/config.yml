@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question or share an idea
+    url: https://github.com/gitswagata1/mcp-audit/discussions
+    about: Use Discussions for questions and open-ended ideas.
+  - name: Report a security vulnerability
+    url: https://github.com/gitswagata1/mcp-audit/security/advisories/new
+    about: Please report security issues privately, not as a public issue.

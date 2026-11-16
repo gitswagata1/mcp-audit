@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "mcp-audit"
+abstract: "A zero-dependency security scanner for Model Context Protocol server configurations."
+type: software
+authors:
+  - family-names: "Banerjee"
+    given-names: "Swagata"
+repository-code: "https://github.com/gitswagata1/mcp-audit"
+license: MIT
+version: "1.0.0"
+date-released: "2026-11-16"
+keywords:
+  - mcp
+  - security
+  - ai-agents
+  - supply-chain
